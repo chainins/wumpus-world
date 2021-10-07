@@ -2,16 +2,19 @@
 # ECE 4524 Problem Set 2
 # File Name: wwsim.py
 # Author: Greg Scott
-#
+# Modified: Chengpi Wu
 # Includes classes for the simulation and the Tkinter display of the simulation.
 # Also includes code to process the command-line input and run the program accordingly.
 
 
+import sys
 
 from wwagent import *
-import sys
-from Tkinter import *
+
+from tkinter import *
 from random import randint
+
+import time
 
 # in your inner loop use it thus (just an example, I would probably use a named tuple)
 #
@@ -19,8 +22,8 @@ from random import randint
 #action = wwagent.action() # get the next action to take from the agent
 
 # Global Constants
-COLUMNS = 4
-ROWS = 4
+COLUMNS = 8
+ROWS = 8
 FONTTYPE = "Purisa"
 
 # SET UP CLASS AND METHODS HERE
@@ -37,6 +40,8 @@ class Simulation:
         self.agentPos = (3, 0)
         self.agentFacing = 'right'
         self.arrow = 1
+        self.step = 0 #chengpi modified.
+        self.agentName = "Smart"  #chengpi modified.
         self.wumpusAlive = True
         self.pits = {}
         self.percepts = {}
@@ -46,6 +51,7 @@ class Simulation:
         self.wumpusLoc = (None, None)
         self.goldLocation = (None, None)
         self.hasGold = False
+        self.endEpisode = False # self termination
 
     def set_percepts(self, r, c, item):
         if (item == 'gold'):
@@ -103,9 +109,27 @@ class Simulation:
                 else:
                     self.pits['room'+str(r)+str(c)] = False
 
+
+    def generate_simulation_for_changeAgent(self,name): # chengpi modified
+        # Set wumpus percepts
+        self.agentName = name
+        self.set_percepts(self.wumpusLoc[0], self.wumpusLoc[1], 'wumpus')
+        # Set gold percepts
+        self.set_percepts(self.goldLocation[0], self.goldLocation[1], 'gold')
+        # Generate pits
+        for r in range(self.rowSize):
+            for c in range(self.colSize):
+                if (self.pits['room'+str(r)+str(c)] == True):
+                    # Set pit percepts
+                    self.set_percepts(r, c, 'pit')
+
+
     def reset_stats(self, newScore):
         self.agent = None
         self.score = newScore
+        self.step = 0 # chengpi modified
+        self.agentName = "Smart" # chengpi modified
+
         self.lastMove = 'None'
         self.lastPos = (3, 0)
         self.agentPos = (3, 0)
@@ -115,11 +139,39 @@ class Simulation:
         self.wumpusAlive = True
         self.percepts = {}
         self.agent = WWAgent()
+        self.endEpisode=False
+        for r in range(self.rowSize):
+            for c in range(self.colSize):
+                self.percepts['room'+str(r)+str(c)] = (None, None, None, None, None)
+                
+    def switchAgent(self, newScore): # chengpi modified
+        self.agent = None
+        self.score = newScore
+        self.step = 0 
+        self.lastMove = 'None'
+        self.lastPos = (3, 0)
+        self.agentPos = (3, 0)
+        self.agentFacing = 'right'
+        self.arrow = 1
+        self.hasGold = False
+        self.wumpusAlive = True
+        self.percepts = {}
+        if self.agentName == "Random":
+            self.agent = WWAgent_random()
+        elif self.agentName == "Smart":
+            self.agent = WWAgent()
+        self.endEpisode=False
         for r in range(self.rowSize):
             for c in range(self.colSize):
                 self.percepts['room'+str(r)+str(c)] = (None, None, None, None, None)
 
     def agent_move(self, action):
+        self.step += 1 # chengpi modified
+        
+        if (action == 'exit'):
+            self.endEpisode=True
+            return
+        
         if (action == 'shoot'):
             self.score = self.score - 10
         else:
@@ -209,10 +261,13 @@ class Simulation:
         r = self.agentPos[0]
         c = self.agentPos[1]
         if (self.agentPos == self.wumpusLoc) and (self.wumpusAlive == True):
+            # sim.endEpisode == True # chengpi modified
             return True
         elif (self.pits['room'+str(r)+str(c)]):
+            # sim.endEpisode == True # chengpi modified
             return True
         elif (self.agentPos == (3, 0)) and self.lastMove.lower() == 'climb':
+            # sim.endEpisode == True # chengpi modified
             return True
         else:
             return False
@@ -244,6 +299,8 @@ class Display:
     pastMove = None
     arrowStatus = None
     arrowStatusDis = None
+    stepStatus = None # chengpi modified
+    stepStatusDis = None # chengpi modified
     percepts = None
     agentDirection = None
 
@@ -287,19 +344,49 @@ class Display:
         self.score = StringVar()
         self.pastMove = StringVar()
         self.arrowStatus = StringVar()
+        
+        # self.step =  # chengpi modified
+        self.step = StringVar()
+        self.agentName = StringVar()
+        self.agentName.set("Smart")
+        # self.agentName.set(sim.agentName)
+        
+        
+        
+        self.stepStatus = StringVar() # chengpi modified
+        self.step.set(str(0))
+        self.stepStatus.set(str(0)) # chengpi modified
+        self.stepStatus.set('0') # chengpi modified
+        
         self.percepts = StringVar()
         self.agentDirection = StringVar()
         self.score.set(str(0))
         self.pastMove.set('None')
-        self.arrowStatus.set('Available')
+        self.arrowStatus.set('Available') 
+        
         self.agentDirection.set('Right')
         self.percepts.set(str(simulation.percepts['room30']))
         theScoreDis = Label(master, font=(FONTTYPE, 16), text="Performance:")
+        
+        
+        
+        ########### chengpi modified
+        theStepDis = Label(master, font=(FONTTYPE, 16), text="Steps:") # chengpi modified
+        agentTitle = Label(master, font=(FONTTYPE, 16), fg='Red', text="Agent:")
+        agentTitle.place(x = 250, y = 420)
+        agentDisc = Label(master, font=(FONTTYPE, 16), fg='Red', textvariable=self.agentName)# chengpi modified
+        agentDisc.place(x = 320, y = 420)
+       
+        
+        
         lastMoveDis = Label(master, font=(FONTTYPE, 16), text="Last Move:")
         performanceDis = Label(master, font=(FONTTYPE, 14), textvariable=self.score)
         pastMoveDis = Label(master, font=(FONTTYPE, 14), textvariable=self.pastMove)
         arrowTitle = Label(master, font=(FONTTYPE, 16), text="Arrow Status:")
         self.arrowStatusDis = Label(master, font=(FONTTYPE, 14), fg='Green', textvariable=self.arrowStatus)
+        
+        self.stepStatusDis = Label(master, font=(FONTTYPE, 14), fg='Green', textvariable=self.step) # chengpi modified
+        
         perceptsTitle = Label(master, font=(FONTTYPE, 16), text="Current Percepts:")
         perceptsDis = Label(master, font=(FONTTYPE, 14), textvariable=self.percepts)
         agentDirectionTitle = Label(master, font=(FONTTYPE, 16), text = "Agent Facing:")
@@ -307,8 +394,13 @@ class Display:
         self.goldStatus = Label(master, font=(FONTTYPE, 16), fg='Gold', text = "Agent has gold!")
         performanceDis.place(x = 420, y = 25)
         theScoreDis.place(x = 420, y = 0)
+        
+
         arrowTitle.place(x = 420, y = 75)
-        self.arrowStatusDis.place(x = 420, y = 100)
+        
+        theStepDis.place(x = 560, y = 0) # chengpi modified
+        self.stepStatusDis.place(x = 560, y = 25) # chengpi modified
+        
         lastMoveDis.place(x = 420, y = 150)
         pastMoveDis.place(x = 420, y = 175)
         perceptsTitle.place(x = 5, y = 420)
@@ -329,6 +421,13 @@ class Display:
         self.score.set(str(sim.score))
         self.pastMove.set(sim.lastMove)
         self.agentDirection.set(sim.agentFacing.title())
+        
+        self.step.set(str(sim.step)) # chengpi modified
+        if (sim.step == 0): # chengpi modified
+            #sim.step +=1
+            self.stepStatus.set(str(sim.step))
+            self.stepStatusDis.config(fg='Red')
+            
         if (sim.arrow == 0):
             self.arrowStatus.set('Used')
             self.arrowStatusDis.config(fg='Red')
@@ -359,15 +458,23 @@ class Display:
             self.grid['room'+str(loc[0])+str(loc[1])].image = temp
 
     def reset_display(self, sim):
+        self.agentName.set(sim.agentName) # chengpi modified
+
         for r in range(ROWS):
             for c in range(COLUMNS):
                 tkimage = self.set_room(r, c, sim)
                 self.grid['room'+str(r)+str(c)].config(image = tkimage)
                 self.grid['room'+str(r)+str(c)].image = tkimage
         self.score.set(str(sim.score))
+        
+        
         self.pastMove.set(sim.lastMove)
         self.agentDirection.set(sim.agentFacing.title())
         self.arrowStatus.set('Available')
+        
+        self.step.set(str(sim.step))
+        self.stepStatus.set('0') # chengpi modified
+        
         self.arrowStatusDis.config(fg='Green')
         currentPercepts = sim.percepts['room'+str(sim.agentPos[0])+str(sim.agentPos[1])]
         self.percepts.set(str(currentPercepts))
@@ -397,7 +504,28 @@ if (len(sys.argv) == 2):
             fell.place_forget()
             climbOut.place_forget()
             makeMove.place(x = 420, y = 225)
+            
+            
+        def resetAgent():
+            if (sim.agentName == "Smart"):
+                sim.agentName = "Random" #chnegpi modified
+                sim.switchAgent(0)
+                sim.generate_simulation_for_changeAgent("Random")
+            elif (sim.agentName == "Random"):
+                sim.agentName = "Smart"
+                sim.switchAgent(0)
+                sim.generate_simulation_for_changeAgent("Smart")
+            # sim.agentName = "Random"
+            app.reset_display(sim)
+            eaten.place_forget()
+            fell.place_forget()
+            climbOut.place_forget()
+            makeMove.place(x = 420, y = 225)          
+            
         def updateSim():
+            if (sim.endEpisode):
+                resetGame()
+                return
             sim.move()
             sim.update_score()
             if (sim.terminal_test() and sim.lastMove.lower() == 'climb'):
@@ -409,7 +537,7 @@ if (len(sys.argv) == 2):
                 else:
                     fell.place(x = 420, y = 400)
                 makeMove.place_forget()
-            app.update_move(sim)
+            app.update_move(sim) #chengpi modified
 
         # Methods for the buttons to operate the agent manually
         def movePlayer():
@@ -422,6 +550,7 @@ if (len(sys.argv) == 2):
                     fell.place(x = 420, y = 400)
                 makeMove.place_forget()
             app.update_move(sim)
+            
         def moveLeft():
             sim.agent_move('left')
             sim.update_score()
@@ -480,31 +609,83 @@ if (len(sys.argv) == 2):
 #       They can be used for testing the simulation runs properly
 #       Uncomment the following lines to use them
 #
-#        go = Button(root, text = "Go", font = (FONTTYPE, 14), command = movePlayer)
-#        go.place(x = 470, y = 350)
-#        left = Button(root, text = "Left", font = (FONTTYPE, 14), command = moveLeft)
-#        left.place(x = 420, y = 350)
-#        right = Button(root, text = "Right", font = (FONTTYPE, 14), command = moveRight)
-#        right.place(x = 515, y = 350)
-#        toGrab = Button(root, text = "Grab", font = (FONTTYPE, 14), command = grab)
-#        toGrab.place(x = 500, y = 435)
-#        toClimb = Button(root, text = "Climb", font = (FONTTYPE, 14), command = climb)
-#        toClimb.place(x = 570, y = 435)
-#        toShoot = Button(root, text = "Shoot", font = (FONTTYPE, 14), command = shoot)
-#        toShoot.place(x = 420, y = 390)
+        go = Button(root, text = "Go", font = (FONTTYPE, 14), command = movePlayer)
+        go.place(x = 470, y = 350)
+        left = Button(root, text = "Left", font = (FONTTYPE, 14), command = moveLeft)
+        left.place(x = 420, y = 350)
+        right = Button(root, text = "Right", font = (FONTTYPE, 14), command = moveRight)
+        right.place(x = 515, y = 350)
+        toGrab = Button(root, text = "Grab", font = (FONTTYPE, 14), command = grab)
+        toGrab.place(x = 500, y = 435)
+        toClimb = Button(root, text = "Climb", font = (FONTTYPE, 14), command = climb)
+        toClimb.place(x = 570, y = 435)
+        toShoot = Button(root, text = "Shoot", font = (FONTTYPE, 14), command = shoot)
+        toShoot.place(x = 420, y = 390)
 
         reset = Button(root, text = "Reset", font = (FONTTYPE, 14), command = resetGame)
         eaten = Label(root, text = "WUMPUS ATE AGENT", fg = 'Red', font = (FONTTYPE, 16))
         climbOut = Label(root, text = "Player climbed out", fg = 'Green', font = (FONTTYPE, 18))
         fell = Label(root, text = "AGENT FELL IN PIT", fg = 'Red', font = (FONTTYPE, 16))
         
-
-
         reset.place(x = 420, y = 435)
+        
+        
 
+        #########################################   Simulate Start - Chengpi modified
+        
+        switchAgentB = Button(root, text = "Rd / Smt", font = (FONTTYPE, 14), command = resetAgent)
+        switchAgentB.place(x = 560, y = 80)
+        
+            
+        # resetGame()
+        toEmulate = Button(root, text="autoRun", font = (FONTTYPE, 14), command=lambda: autoMove())
+        toEmulate.place(x = 560, y = 150)
+        
+        def emulateMove(): # copy and modified
+            sim.move()
+            sim.update_score()
+            app.update_move(sim) # chengpi modified, settled the problem of steps
+            if (sim.terminal_test() and sim.lastMove.lower() == 'climb'):
+                climbOut.place(x = 420, y = 400)
+                makeMove.place_forget()
+                return True
+            elif (sim.terminal_test()):
+                if (sim.agentPos == sim.wumpusLoc) and (sim.wumpusAlive is True):
+                    eaten.place(x = 420, y = 400)
+                else:
+                    fell.place(x = 420, y = 400)
+                makeMove.place_forget()
+                return True
+            if (sim.endEpisode): # chengpi modified
+                # resetGame() # copy and modified
+                return True
+       
+        
+        maxTrytimes = 500
+        def autoMove():
+            start = round(time.time() * 1000)
+            # time.sleep(2)
+            # time.sleep(0.1)
+            for i in range (maxTrytimes):
+                # time.sleep(0.001) # initiating time.
+                #root.after(2000, emulateMove) 
+                if emulateMove():
+                    break
+            end = round(time.time() * 1000)
+            print('Ended after % d milliseconds' % (end-start)) 
+        
+        #########################################   Simulate End - Chengpi modified
+            
+            
         # Main simulation loop
         root.mainloop()
         #
+        
+        
+        
+       
+        
+        
     elif (arglist[1].lower() == '-nongui'):
         print('Running Non-GUI...')
         print('\n')
@@ -522,39 +703,56 @@ if (len(sys.argv) == 2):
 
         # Print the steps
         print('START OF SIMULATION')
-        while (sim.terminal_test() is not True):
+        
+        ################# chengpi modified.
+        import time
+        start = time.time() 
+               
+        
+        while (sim.terminal_test() is not True) and (sim.endEpisode is not True ):
             print('------------------------------------------------------------------')
-            print 'Move: ', moveCount
-            print 'Last Action: ', sim.lastMove
+            print ('Move: ', moveCount)
+            print ('Last Action: ', sim.lastMove)
             print('\n')
             print('Wumpus World Item Locations:')
-            print 'Wumpus Location: ', wl, '   Gold Location: ', gl
-            print 'Pit Locations: ', str(pl)
+            print ('Wumpus Location: ', wl, '   Gold Location: ', gl)
+            print ('Pit Locations: ', str(pl))
             print('\n')
             print('Agent Info:')
-            print 'Position: ', sim.agentPos, '   Facing: ', sim.agentFacing
-            print 'Has Gold: ', str(sim.hasGold), '   Arrow: ', sim.arrow
+            print ('Position: ', sim.agentPos, '   Facing: ', sim.agentFacing)
+            print ('Has Gold: ', str(sim.hasGold), '   Arrow: ', sim.arrow)
             print('\n')
             print('Simlulation Current States:')
-            print 'Wumpus Alive: ', str(sim.wumpusAlive), '   Performance: ', sim.score
-            print 'Current Percepts: ', str(sim.percepts['room'+str(sim.agentPos[0])+str(sim.agentPos[1])])
+            print ('Wumpus Alive: ', str(sim.wumpusAlive), '   Performance: ', sim.score)
+            print ('Current Percepts: ', str(sim.percepts['room'+str(sim.agentPos[0])+str(sim.agentPos[1])]))
             # Prompt agent to move
             sim.move()
             sim.update_score()
             moveCount = moveCount + 1
         # Print final result
         print('------------------------------------------------------------------')
-        print 'Last Action: ', sim.lastMove
+        print ('Last Action: ', sim.lastMove)
         print('GAME OVER')
         print('\n')
-        if sim.lastMove.lower() == 'climb':
+        
+        
+        ################# chengpi modified.
+        end = time.time() 
+        print('Ended after % d seconds' % (end-start)) 
+        
+        
+        
+        
+        if (sim.endEpisode):
+            print("Agent acquired the gold.")
+        elif sim.lastMove.lower() == 'climb':
             print('Agent has climbed out of cave.')
         elif sim.agentPos == sim.wumpusLoc:
             print('Agent was eaten by the wumpus and died!')
         else:
             print('Agent fell into pit and died!')
         print('\n')
-        print 'Final Performance: ', sim.score
+        print ('Final Performance: ', sim.score)
 
     elif (arglist[1].lower() == '-help'):
         print('------------------------------------------------------------------')
