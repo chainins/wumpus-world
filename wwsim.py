@@ -2,7 +2,8 @@
 # ECE 4524 Problem Set 2
 # File Name: wwsim.py
 # Author: Greg Scott
-# Modified: Chengpi Wu
+# Modified by Chengpi Wu
+#
 # Includes classes for the simulation and the Tkinter display of the simulation.
 # Also includes code to process the command-line input and run the program accordingly.
 
@@ -14,16 +15,14 @@ from wwagent import *
 from tkinter import *
 from random import randint
 
-import time
-
 # in your inner loop use it thus (just an example, I would probably use a named tuple)
 #
 #wwagent.update(percept) # update the agent with the current percept
 #action = wwagent.action() # get the next action to take from the agent
 
 # Global Constants
-COLUMNS = 8
-ROWS = 8
+COLUMNS = 4
+ROWS = 4
 FONTTYPE = "Purisa"
 
 # SET UP CLASS AND METHODS HERE
@@ -660,19 +659,23 @@ if (len(sys.argv) == 2):
                 # resetGame() # copy and modified
                 return True
        
+        import time
+        start = time.time() 
         
         maxTrytimes = 500
         def autoMove():
-            start = round(time.time() * 1000)
             # time.sleep(2)
-            # time.sleep(0.1)
+            time.sleep(0.1)
             for i in range (maxTrytimes):
-                # time.sleep(0.001) # initiating time.
+                time.sleep(0.001) # initiating time.
                 #root.after(2000, emulateMove) 
                 if emulateMove():
                     break
-            end = round(time.time() * 1000)
-            print('Ended after % d milliseconds' % (end-start)) 
+            
+            
+            
+        end = time.time() 
+        print('Ended after % d seconds' % (end-start)) 
         
         #########################################   Simulate End - Chengpi modified
             

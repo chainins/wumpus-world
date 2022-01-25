@@ -1,27 +1,12 @@
 # -*- coding: utf-8 -*-
 
-"""
-ECE 4524 Problem Set 2
-File Name: wwagent.py
-Author: Greg Scott
-Modified by: Chengpi Wu
-Includes classes for the agent and his knowledge base.  Some useful methods
-are also in this file.
-"""
-
 ###############################################
 #                                             #
-#     Created on Mon Nov 30 20:10:12 2020     #
-#         CISC 6525 Class of Fordam           #
-#         @author: Chengpi Wu                 #
+#             Mon Nov 30 20:10:12 2020        #
 #                                             #
 ###############################################
 
 """
-CISC 6525 Class of Fordam
-Final Project
-Chengpi Wu
-Dec 12, 2021
 
 This is an agent could find the gold in a wumpus world.
 The basic method is truth-table enumeration-based entailment
@@ -89,7 +74,7 @@ from random import shuffle
 class WWAgent:
 
     def __init__(self):
-        self.max=8 # number of cells in one side of square world
+        self.max=4 # number of cells in one side of square world
         self.stopTheAgent=False # set to true to stop th agent at end of episode
         self.position = (0, self.max-1) # top is (0,0)  
         self.directions=['up','right','down','left']
@@ -226,7 +211,7 @@ class WWAgent:
                         wList =  [gridx]
                     else:
                         wList = [wList] + ['or',gridx]
-                if ((r + 1) < self.max):
+                if ((r + 1) < 4):
                     gridx = 'w'+str(r+1)+str(c)
                     if not(gridx in self.symbolsList):
                         self.symbolsList.append(gridx)
@@ -242,7 +227,7 @@ class WWAgent:
                         wList =  [gridx]
                     else:
                         wList = [wList] + ['or',gridx]
-                if ((c + 1) < self.max):
+                if ((c + 1) < 4):
                     gridx = 'w'+str(r)+str(c+1)
                     if not(gridx in self.symbolsList):
                         self.symbolsList.append(gridx)
@@ -262,7 +247,7 @@ class WWAgent:
                         self.symbolsList.append(gridx)                
                     if not ( (gridx,False) in self.dicKB):
                         self.dicKB.append((gridx,False))
-                if ((r + 1) < self.max):
+                if ((r + 1) < 4):
                     gridx = 'w'+str(r+1)+str(c)
                     if not(gridx in self.symbolsList):
                         self.symbolsList.append(gridx)                
@@ -274,7 +259,7 @@ class WWAgent:
                         self.symbolsList.append(gridx)                
                     if not ( (gridx,False) in self.dicKB):
                         self.dicKB.append((gridx,False))
-                if ((c + 1) < self.max):
+                if ((c + 1) < 4):
                     gridx = 'w'+str(r)+str(c+1)
                     if not(gridx in self.symbolsList):
                         self.symbolsList.append(gridx)                
@@ -289,7 +274,7 @@ class WWAgent:
                         pList =  [gridx]
                     else:
                         pList = [pList] + ['or',gridx]
-                if ((r + 1) < self.max):
+                if ((r + 1) < 4):
                     gridx = 'p'+str(r+1)+str(c)
                     if not(gridx in self.symbolsList):
                         self.symbolsList.append(gridx)                
@@ -305,7 +290,7 @@ class WWAgent:
                         pList =  [gridx]
                     else:
                         pList = [pList] + ['or',gridx]
-                if ((c + 1) < self.max):
+                if ((c + 1) < 4):
                     gridx = 'p'+str(r)+str(c+1)
                     if not(gridx in self.symbolsList):
                         self.symbolsList.append(gridx)                
@@ -325,7 +310,7 @@ class WWAgent:
                         self.symbolsList.append(gridx)                
                     if not ( (gridx,False) in self.dicKB):
                         self.dicKB.append((gridx,False))
-                if ((r + 1) < self.max):
+                if ((r + 1) < 4):
                     gridx = 'p'+str(r+1)+str(c)
                     if not(gridx in self.symbolsList):
                         self.symbolsList.append(gridx)                
@@ -337,7 +322,7 @@ class WWAgent:
                         self.symbolsList.append(gridx)                
                     if not ( (gridx,False) in self.dicKB):
                         self.dicKB.append((gridx,False))
-                if ((c + 1) < self.max):
+                if ((c + 1) < 4):
                     gridx = 'p'+str(r)+str(c+1)
                     if not(gridx in self.symbolsList):
                         self.symbolsList.append(gridx)                
@@ -458,13 +443,13 @@ class WWAgent:
         if ((r - 1) >= 0):
             self.symbolsList.append('w' + str(r-1) + str(c))
             self.symbolsList.append('p' + str(r-1) + str(c))
-        if ((r + 1) < self.max):
+        if ((r + 1) < 4):
             self.symbolsList.append('w' + str(r+1) + str(c))
             self.symbolsList.append('p' + str(r+1) + str(c))
         if ((c - 1) >= 0):
             self.symbolsList.append('w' + str(r) + str(c-1))
             self.symbolsList.append('p' + str(r) + str(c-1))
-        if ((c + 1) < self.max):
+        if ((c + 1) < 4):
             self.symbolsList.append('w' + str(r) + str(c+1))
             self.symbolsList.append('p' + str(r) + str(c+1))
 
@@ -480,7 +465,7 @@ class WWAgent:
             if safeResult is not None: safeGrids.append(safeResult)
             if failResult is not None: failGrids.append(failResult)
             if probResult is not None: probGrids.append(probResult)
-        if ((r + 1) < self.max):
+        if ((r + 1) < 4):
             self.symbolCreateList(r+1,c)
             safeResult,failResult,probResult = self.trygrid(r+1,c)
             if safeResult is not None: safeGrids.append(safeResult)
@@ -492,7 +477,7 @@ class WWAgent:
             if safeResult is not None: safeGrids.append(safeResult)
             if failResult is not None: failGrids.append(failResult)
             if probResult is not None: probGrids.append(probResult)
-        if ((c + 1) < self.max):
+        if ((c + 1) < 4):
             self.symbolCreateList(r,c+1)
             safeResult,failResult,probResult = self.trygrid(r,c+1)
             if safeResult is not None: safeGrids.append(safeResult)
@@ -656,7 +641,7 @@ class WWAgent:
 class WWAgent_random:
 
     def __init__(self):
-        self.max= 8 # number of cells in one side of square world
+        self.max=4 # number of cells in one side of square world
         self.stopTheAgent=False # set to true to stop th agent at end of episode
         self.position = (0, 3) # top is (0,0)
         self.directions=['up','right','down','left']
